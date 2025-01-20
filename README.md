@@ -1,5 +1,2 @@
-<<<<<<< HEAD
-Wellcome to my channel
-=======
-# jenkins_automation
->>>>>>> 5129da48371d5e06695c603b2562323d4988155c
+expose fe: 8090:80
+be: 8088:8080
