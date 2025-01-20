@@ -1,0 +1,132 @@
+version: "3.9"
+
+networks:
+  app-spring-angular:
+    driver: bridge
+    
+volumes:
+  data:
+  # grafana_config:
+  # grafana_data:
+  # grafana_logs:
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: db_mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=Ngochung1809!
+      - MYSQL_DATABASE=employee_app
+    networks:
+      - app-spring-angular
+    volumes:
+      - data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    # build:
+    #   context: ./BackEnd-SpringBoot/
+    #   dockerfile: Dockerfile
+    image: ngochung1809/back-end-app-spring:0.0.1
+    networks:
+      - app-spring-angular
+    container_name: back-end-app
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/employee_app
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=Ngochung1809!
+      - SPRING_JPA_SHOW_SQL=true
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=create-drop
+      - SERVER_PORT=8080
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --fail http://backend:8080/actuator/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    # build:
+    #   context: ./FrontEnd-Angular/
+    #   dockerfile: Dockerfile
+    image: ngochung1809/nginx-app-spring:0.0.1
+    container_name: front-end-app
+    networks:
+      - app-spring-angular
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+      
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   ports:
+  #   - 9090:9090
+  #   networks:
+  #     - app-spring-angular
+  #   volumes:
+  #   - "./prometheus.yml:/etc/prometheus/prometheus.yml"
+  #   depends_on:
+  #     - db
+  #     - backend
+  #     - frontend
+          
+  # loki:
+  #   image: grafana/loki:2.8.0
+  #   container_name: loki
+  #   volumes:
+  #     - ./loki-config.yaml:/mnt/config/loki-config.yaml
+  #   ports:
+  #     - "3100:3100"
+  #   networks:
+  #     - app-spring-angular
+  #   command: -config.file=/mnt/config/loki-config.yaml
+  #   depends_on:
+  #     - db
+  #     - backend
+  #     - frontend
+
+  # promtail:
+  #   image: grafana/promtail:2.8.0
+  #   container_name: promtail
+  #   volumes:
+  #     - ./promtail-config.yaml:/mnt/config/promtail-config.yaml
+  #     - /var/log:/var/log
+  #   networks:
+  #     - app-spring-angular
+  #   links:
+  #     - loki
+  #   command: -config.file=/mnt/config/promtail-config.yaml
+  #   depends_on:
+  #     - db
+  #     - backend
+  #     - frontend
+
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: grafana
+  #   ports:
+  #     - "3000:3000"
+  #   networks:
+  #     - app-spring-angular
+  #   volumes:
+  #     - grafana_config:/etc/grafana
+  #     - grafana_data:/var/lib/grafana
+  #     - grafana_logs:/var/log/grafana
+  #   depends_on:
+  #     - db
+  #     - backend
+  #     - frontend
+    
+
